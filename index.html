@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>학생출입패스</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: #edf2f7;
+      font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+      color: #142033;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 430px;
+      min-height: 100vh;
+      margin: 0 auto;
+      background: linear-gradient(180deg, #f7fbff 0%, #eef4fb 100%);
+    }
+
+    .topbar {
+      background: rgba(255,255,255,0.88);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid #e4ebf3;
+      padding: 14px 18px 0;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .topbar-row {
+      height: 54px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: relative;
+    }
+
+    .icon-btn {
+      width: 42px;
+      height: 42px;
+      border: none;
+      background: transparent;
+      font-size: 28px;
+      color: #21314f;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    .top-title {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 19px;
+      font-weight: 800;
+      letter-spacing: -0.4px;
+      color: #17243b;
+      white-space: nowrap;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 16px;
+      padding: 8px 0 12px;
+    }
+
+    .tab {
+      padding: 10px 14px;
+      border-radius: 999px;
+      font-size: 15px;
+      font-weight: 700;
+      color: #61718e;
+      background: #edf3f9;
+    }
+
+    .tab.active {
+      background: #1f5eff;
+      color: #fff;
+      box-shadow: 0 8px 18px rgba(31, 94, 255, 0.24);
+    }
+
+    .page {
+      padding: 18px 16px 40px;
+    }
+
+    .hero {
+      margin-bottom: 12px;
+      padding: 0 4px;
+      color: #2f4366;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .card {
+      background: #ffffff;
+      border-radius: 28px;
+      overflow: hidden;
+      box-shadow: 0 14px 34px rgba(20, 40, 90, 0.12);
+      border: 1px solid #e6edf6;
+    }
+
+    .card-inner {
+      padding: 22px 20px 18px;
+    }
+
+    .badge-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+      gap: 10px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 11px;
+      border-radius: 999px;
+      background: #fff1f0;
+      color: #d4382d;
+      font-size: 11px;
+      font-weight: 800;
+      border: 1px solid #ffd6d1;
+    }
+
+    .status-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #ecfdf3;
+      color: #0f9f58;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #0f9f58;
+    }
+
+    .detail-view {
+      display: block;
+    }
+
+    .detail-view.hidden {
+      display: none;
+    }
+
+    .photo-wrap {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 18px;
+    }
+
+    .photo-shell {
+      width: 192px;
+      height: 192px;
+      border-radius: 26px;
+      background: linear-gradient(145deg, #f5f9ff, #eaf1fb);
+      padding: 8px;
+      box-shadow: inset 0 0 0 1px #e3ebf7;
+    }
+
+    .photo {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 20px;
+      background: #f3f6fa;
+      display: block;
+    }
+
+    .detail-layout {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 14px;
+    }
+
+    .left-block {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .name {
+      margin: 0 0 12px;
+      font-size: 30px;
+      line-height: 1.08;
+      font-weight: 900;
+      letter-spacing: -1px;
+      color: #12213b;
+      word-break: keep-all;
+    }
+
+    .student-no {
+      font-size: 20px;
+      font-weight: 800;
+      color: #1e3157;
+      margin-bottom: 10px;
+      letter-spacing: -0.3px;
+    }
+
+    .meta-box {
+      background: #f6f9fd;
+      border: 1px solid #e6edf6;
+      border-radius: 18px;
+      padding: 12px 13px;
+    }
+
+    .meta-line {
+      font-size: 14px;
+      color: #2f4265;
+      line-height: 1.52;
+      margin-bottom: 8px;
+      word-break: keep-all;
+      white-space: pre-line;
+    }
+
+    .meta-line:last-child {
+      margin-bottom: 0;
+    }
+
+    .meta-label {
+      font-weight: 800;
+      color: #17305f;
+      margin-right: 6px;
+    }
+
+    .switch-wrap {
+      flex-shrink: 0;
+      padding-top: 8px;
+    }
+
+    .switch-btn {
+      width: 72px;
+      height: 40px;
+      border: none;
+      border-radius: 999px;
+      background: #1b4ed8;
+      position: relative;
+      cursor: pointer;
+      transition: 0.2s;
+      box-shadow: 0 8px 18px rgba(27, 78, 216, 0.18);
+    }
+
+    .switch-btn::after {
+      content: "";
+      position: absolute;
+      top: 3px;
+      left: 35px;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: #fff;
+      transition: 0.2s;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    }
+
+    .switch-btn.off {
+      background: #c9d5e7;
+      box-shadow: none;
+    }
+
+    .switch-btn.off::after {
+      left: 3px;
+    }
+
+    .qr-view {
+      display: none;
+      gap: 14px;
+      align-items: flex-start;
+      justify-content: space-between;
+    }
+
+    .qr-view.active {
+      display: flex;
+    }
+
+    .qr-left {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .qr-name {
+      margin: 0 0 12px;
+      font-size: 28px;
+      font-weight: 900;
+      letter-spacing: -0.8px;
+      color: #14213a;
+      line-height: 1.08;
+    }
+
+    .qr-student-no {
+      font-size: 20px;
+      font-weight: 800;
+      margin-bottom: 12px;
+      color: #20345d;
+    }
+
+    .qr-card-info {
+      background: #f6f9fd;
+      border: 1px solid #e6edf6;
+      border-radius: 16px;
+      padding: 12px;
+      font-size: 13px;
+      line-height: 1.55;
+      color: #32486d;
+      white-space: pre-line;
+    }
+
+    .qr-wrap {
+      width: 156px;
+      flex-shrink: 0;
+      background: #fff;
+      border-radius: 22px;
+      padding: 10px;
+      border: 1px solid #e3ebf6;
+      box-shadow: 0 8px 18px rgba(37, 63, 120, 0.08);
+    }
+
+    #qrcode {
+      width: 136px;
+      height: 136px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    #qrcode img,
+    #qrcode canvas {
+      display: block;
+      width: 136px !important;
+      height: 136px !important;
+    }
+
+    .time-wrap {
+      margin-top: 22px;
+    }
+
+    .time-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      font-size: 13px;
+      color: #6980a7;
+      font-weight: 700;
+    }
+
+    .bar-bg {
+      width: 100%;
+      height: 10px;
+      background: #d8e1ef;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, #4ea3ff 0%, #3366ff 55%, #6d35ff 100%);
+      border-radius: 999px;
+      transition: width 1s linear;
+    }
+
+    .time-text {
+      margin-top: 10px;
+      font-size: 16px;
+      color: #8193b1;
+      font-weight: 700;
+    }
+
+    .time-text strong {
+      color: #2f73ff;
+    }
+
+    .bottom-btn {
+      width: 100%;
+      height: 82px;
+      border: none;
+      background: linear-gradient(90deg, #17305f, #1d4ed8);
+      color: #fff;
+      font-size: 20px;
+      font-weight: 800;
+      cursor: pointer;
+      letter-spacing: -0.4px;
+    }
+
+    .drawer-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(7, 19, 40, 0.42);
+      display: none;
+      z-index: 40;
+    }
+
+    .drawer-backdrop.show {
+      display: block;
+    }
+
+    .drawer {
+      position: fixed;
+      top: 0;
+      right: -100%;
+      width: min(420px, 92vw);
+      height: 100vh;
+      background: #fff;
+      z-index: 50;
+      box-shadow: -10px 0 30px rgba(18, 33, 58, 0.18);
+      transition: right 0.24s ease;
+      overflow-y: auto;
+      padding: 20px 18px 34px;
+    }
+
+    .drawer.show {
+      right: 0;
+    }
+
+    .drawer-title {
+      font-size: 24px;
+      font-weight: 900;
+      letter-spacing: -0.6px;
+      color: #11203a;
+      margin: 2px 0 8px;
+    }
+
+    .drawer-desc {
+      font-size: 13px;
+      line-height: 1.55;
+      color: #66758f;
+      margin-bottom: 18px;
+    }
+
+    .field {
+      margin-bottom: 13px;
+    }
+
+    .field label {
+      display: block;
+      margin-bottom: 7px;
+      font-size: 14px;
+      font-weight: 800;
+      color: #1f3155;
+    }
+
+    .field input,
+    .field textarea {
+      width: 100%;
+      border: 1px solid #d8e1ef;
+      border-radius: 14px;
+      padding: 12px 13px;
+      font-size: 15px;
+      font-family: inherit;
+      color: #17243b;
+      background: #f9fbff;
+    }
+
+    .field textarea {
+      min-height: 82px;
+      resize: vertical;
+    }
+
+    .hint {
+      margin-top: 5px;
+      font-size: 12px;
+      line-height: 1.45;
+      color: #8b9ab3;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .btn {
+      flex: 1;
+      height: 48px;
+      border: none;
+      border-radius: 14px;
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .btn-dark {
+      background: #1d4ed8;
+      color: #fff;
+    }
+
+    .btn-light {
+      background: #edf3fb;
+      color: #183259;
+    }
+
+    .btn-outline {
+      width: 100%;
+      height: 48px;
+      border-radius: 14px;
+      border: 1px solid #d8e1ef;
+      background: #fff;
+      color: #1b3057;
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+      margin-bottom: 10px;
+    }
+
+    .double-tap-note {
+      margin-top: 10px;
+      font-size: 12px;
+      color: #7f8eaa;
+      line-height: 1.45;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="topbar-row">
+        <button class="icon-btn" type="button" aria-label="뒤로가기">‹</button>
+        <div class="top-title">학생출입패스</div>
+        <button class="icon-btn" id="menuBtn" type="button" aria-label="메뉴">☰</button>
+      </div>
+
+      <div class="tabs">
+        <div class="tab active">학생패스</div>
+        <div class="tab">행사패스</div>
+      </div>
+    </header>
+
+    <main class="page">
+      <div class="hero">
+        교내 출입 확인과 과제 시연을 위한 데모 카드다.
+      </div>
+
+      <section class="card">
+        <div class="card-inner">
+          <div class="badge-row">
+            <div class="badge">DEMO · 실제 신분증 아님</div>
+            <div class="status-chip"><span class="dot"></span> ACTIVE</div>
+          </div>
+
+          <div id="detailView" class="detail-view">
+            <div class="photo-wrap">
+              <div class="photo-shell">
+                <img id="photoPreview" class="photo" alt="학생 사진" />
+              </div>
+            </div>
+
+            <div class="detail-layout">
+              <div class="left-block">
+                <h1 id="cardName" class="name">이다니</h1>
+                <div id="cardStudentNo" class="student-no">250101</div>
+
+                <div class="meta-box">
+                  <div class="meta-line"><span class="meta-label">주소</span><span id="cardAddress">서울특별시 강남구 테헤란로 123
+래미안아파트 101동 1203호</span></div>
+                  <div class="meta-line"><span class="meta-label">입학일</span><span id="cardAdmissionDate">2026.03.02</span></div>
+                  <div class="meta-line"><span class="meta-label">교장</span><span id="cardPrincipal">김OO 교장</span></div>
+                </div>
+
+                <div style="margin-top:10px; font-size:12px; color:#6e80a0; font-weight:700;">
+                  학생 출입용 패스
+                </div>
+              </div>
+
+              <div class="switch-wrap">
+                <button id="toggleBtn" class="switch-btn off" type="button" aria-label="QR 전환"></button>
+              </div>
+            </div>
+          </div>
+
+          <div id="qrView" class="qr-view">
+            <div class="qr-left">
+              <h2 id="qrName" class="qr-name">이다니</h2>
+              <div id="qrStudentNo" class="qr-student-no">250101</div>
+              <div id="qrInfo" class="qr-card-info">서울특별시 강남구 테헤란로 123
+래미안아파트 101동 1203호</div>
+            </div>
+
+            <div class="qr-wrap">
+              <div id="qrcode"></div>
+            </div>
+          </div>
+
+          <div class="time-wrap">
+            <div class="time-head">
+              <span>테스트 QR 유효시간</span>
+              <span id="timeMini">30s</span>
+            </div>
+
+            <div class="bar-bg">
+              <div id="timeBar" class="bar-fill"></div>
+            </div>
+
+            <div class="time-text">남은시간 <strong id="timeText">30초</strong></div>
+          </div>
+        </div>
+
+        <button id="bottomActionBtn" class="bottom-btn" type="button">테스트 QR 표시</button>
+      </section>
+    </main>
+  </div>
+
+  <div id="drawerBackdrop" class="drawer-backdrop"></div>
+
+  <aside id="drawer" class="drawer">
+    <button id="closeDrawerBtn" class="btn-outline" type="button">닫기</button>
+    <div class="drawer-title">학생패스 정보 입력</div>
+    <div class="drawer-desc">
+      저장하면 카드 화면에 즉시 반영된다. 메뉴는 빠르게 두 번 눌러야 열린다.
+    </div>
+
+    <div class="field">
+      <label for="inputName">1. 이름</label>
+      <input id="inputName" type="text" placeholder="예: 이다니" />
+    </div>
+
+    <div class="field">
+      <label for="inputStudentNo">2. 학생번호</label>
+      <input id="inputStudentNo" type="text" placeholder="예: 250101" />
+    </div>
+
+    <div class="field">
+      <label for="inputAddress">3. 주소</label>
+      <textarea id="inputAddress" placeholder="도, 시, 구, 도로명, 아파트"></textarea>
+    </div>
+
+    <div class="field">
+      <label for="inputAdmissionDate">4. 입학 날짜</label>
+      <input id="inputAdmissionDate" type="text" placeholder="예: 2026.03.02" />
+    </div>
+
+    <div class="field">
+      <label for="inputPrincipal">5. 교장쌤 성함</label>
+      <input id="inputPrincipal" type="text" placeholder="예: 김OO 교장" />
+    </div>
+
+    <div class="field">
+      <label for="inputPhoto">6. 사진 업로드</label>
+      <input id="inputPhoto" type="file" accept="image/*" />
+      <div class="hint">업로드한 사진은 저장 후 홈 카드에 바로 반영된다.</div>
+    </div>
+
+    <div class="btn-row">
+      <button id="saveBtn" class="btn btn-dark" type="button">저장</button>
+      <button id="resetBtn" class="btn btn-light" type="button">초기화</button>
+    </div>
+
+    <div class="double-tap-note">
+      메뉴 버튼은 더블탭으로만 열린다.
+    </div>
+  </aside>
+
+  <script>
+    const defaultProfile =
+      "data:image/svg+xml;utf8," +
+      encodeURIComponent(`
+        <svg xmlns="http://www.w3.org/2000/svg" width="400" height="400">
+          <defs>
+            <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
+              <stop offset="0%" stop-color="#f6f9ff"/>
+              <stop offset="100%" stop-color="#e8effa"/>
+            </linearGradient>
+          </defs>
+          <rect width="100%" height="100%" rx="32" fill="url(#g)"/>
+          <circle cx="200" cy="138" r="72" fill="#d6dfed"/>
+          <rect x="85" y="228" width="230" height="114" rx="57" fill="#d6dfed"/>
+          <text x="200" y="372" text-anchor="middle" font-size="24" fill="#8c9bb3" font-family="Arial">PHOTO</text>
+        </svg>
+      `);
+
+    const STORAGE_KEY = "student_pass_demo_v4";
+    const state = {
+      name: "이다니",
+      studentNo: "250101",
+      address: "서울특별시 강남구 테헤란로 123\n래미안아파트 101동 1203호",
+      admissionDate: "2026.03.02",
+      principal: "김OO 교장",
+      photo: defaultProfile,
+      duration: 30,
+      remaining: 30,
+      qrSeed: ""
+    };
+
+    const menuBtn = document.getElementById("menuBtn");
+    const drawer = document.getElementById("drawer");
+    const drawerBackdrop = document.getElementById("drawerBackdrop");
+    const closeDrawerBtn = document.getElementById("closeDrawerBtn");
+
+    const detailView = document.getElementById("detailView");
+    const qrView = document.getElementById("qrView");
+    const toggleBtn = document.getElementById("toggleBtn");
+    const bottomActionBtn = document.getElementById("bottomActionBtn");
+
+    const cardName = document.getElementById("cardName");
+    const cardStudentNo = document.getElementById("cardStudentNo");
+    const cardAddress = document.getElementById("cardAddress");
+    const cardAdmissionDate = document.getElementById("cardAdmissionDate");
+    const cardPrincipal = document.getElementById("cardPrincipal");
+    const photoPreview = document.getElementById("photoPreview");
+
+    const qrName = document.getElementById("qrName");
+    const qrStudentNo = document.getElementById("qrStudentNo");
+    const qrInfo = document.getElementById("qrInfo");
+    const qrcodeBox = document.getElementById("qrcode");
+
+    const timeText = document.getElementById("timeText");
+    const timeMini = document.getElementById("timeMini");
+    const timeBar = document.getElementById("timeBar");
+
+    const inputName = document.getElementById("inputName");
+    const inputStudentNo = document.getElementById("inputStudentNo");
+    const inputAddress = document.getElementById("inputAddress");
+    const inputAdmissionDate = document.getElementById("inputAdmissionDate");
+    const inputPrincipal = document.getElementById("inputPrincipal");
+    const inputPhoto = document.getElementById("inputPhoto");
+
+    const saveBtn = document.getElementById("saveBtn");
+    const resetBtn = document.getElementById("resetBtn");
+
+    let showQr = false;
+    let timer = null;
+    let lastMenuTap = 0;
+
+    function loadSavedData() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (!saved) return;
+      try {
+        Object.assign(state, JSON.parse(saved));
+      } catch (e) {
+        console.error("저장 데이터 로드 실패", e);
+      }
+    }
+
+    function saveData() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        name: state.name,
+        studentNo: state.studentNo,
+        address: state.address,
+        admissionDate: state.admissionDate,
+        principal: state.principal,
+        photo: state.photo
+      }));
+    }
+
+    function nlToBr(text) {
+      return (text || "").replace(/\n/g, "<br>");
+    }
+
+    function renderCard() {
+      cardName.textContent = state.name || "이름";
+      cardStudentNo.textContent = state.studentNo || "000000";
+      cardAddress.innerHTML = nlToBr(state.address || "주소");
+      cardAdmissionDate.textContent = state.admissionDate || "2026.03.02";
+      cardPrincipal.textContent = state.principal || "교장";
+      photoPreview.src = state.photo || defaultProfile;
+
+      qrName.textContent = state.name || "이름";
+      qrStudentNo.textContent = state.studentNo || "000000";
+      qrInfo.textContent =
+        `주소\n${state.address || "주소"}\n\n입학일 ${state.admissionDate || "2026.03.02"}\n교장 ${state.principal || "교장"}`;
+    }
+
+    function fillInputs() {
+      inputName.value = state.name;
+      inputStudentNo.value = state.studentNo;
+      inputAddress.value = state.address;
+      inputAdmissionDate.value = state.admissionDate;
+      inputPrincipal.value = state.principal;
+    }
+
+    function openDrawer() {
+      fillInputs();
+      drawer.classList.add("show");
+      drawerBackdrop.classList.add("show");
+    }
+
+    function closeDrawer() {
+      drawer.classList.remove("show");
+      drawerBackdrop.classList.remove("show");
+    }
+
+    function onMenuDoubleTap() {
+      const now = Date.now();
+      if (now - lastMenuTap < 350) {
+        openDrawer();
+      }
+      lastMenuTap = now;
+    }
+
+    function qrPayload() {
+      return JSON.stringify({
+        type: "student-pass-demo",
+        name: state.name,
+        studentNo: state.studentNo,
+        address: state.address,
+        admissionDate: state.admissionDate,
+        principal: state.principal,
+        issuedAt: new Date().toISOString(),
+        token: state.qrSeed
+      });
+    }
+
+    function generateQr() {
+      state.qrSeed = Math.random().toString(36).slice(2) + Date.now().toString(36);
+      qrcodeBox.innerHTML = "";
+      new QRCode(qrcodeBox, {
+        text: qrPayload(),
+        width: 136,
+        height: 136,
+        colorDark: "#000000",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.M
+      });
+    }
+
+    function updateTimerUi() {
+      const percent = (state.remaining / state.duration) * 100;
+      timeBar.style.width = `${percent}%`;
+      timeText.textContent = `${state.remaining}초`;
+      timeMini.textContent = `${state.remaining}s`;
+    }
+
+    function startTimer() {
+      if (timer) clearInterval(timer);
+      updateTimerUi();
+
+      timer = setInterval(() => {
+        state.remaining -= 1;
+        if (state.remaining <= 0) {
+          state.remaining = state.duration;
+          if (showQr) generateQr();
+        }
+        updateTimerUi();
+      }, 1000);
+    }
+
+    function setQrMode(on) {
+      showQr = on;
+
+      if (showQr) {
+        detailView.classList.add("hidden");
+        qrView.classList.add("active");
+        toggleBtn.classList.remove("off");
+        bottomActionBtn.textContent = "상세정보 보기";
+        generateQr();
+      } else {
+        detailView.classList.remove("hidden");
+        qrView.classList.remove("active");
+        toggleBtn.classList.add("off");
+        bottomActionBtn.textContent = "테스트 QR 표시";
+      }
+    }
+
+    menuBtn.addEventListener("click", onMenuDoubleTap);
+    closeDrawerBtn.addEventListener("click", closeDrawer);
+    drawerBackdrop.addEventListener("click", closeDrawer);
+
+    toggleBtn.addEventListener("click", () => setQrMode(!showQr));
+    bottomActionBtn.addEventListener("click", () => setQrMode(!showQr));
+
+    inputPhoto.addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        state.photo = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    saveBtn.addEventListener("click", () => {
+      state.name = inputName.value.trim() || "이름";
+      state.studentNo = inputStudentNo.value.trim() || "000000";
+      state.address = inputAddress.value.trim() || "주소";
+      state.admissionDate = inputAdmissionDate.value.trim() || "2026.03.02";
+      state.principal = inputPrincipal.value.trim() || "교장";
+      saveData();
+      renderCard();
+      closeDrawer();
+      setQrMode(false);
+    });
+
+    resetBtn.addEventListener("click", () => {
+      localStorage.removeItem(STORAGE_KEY);
+      state.name = "이다니";
+      state.studentNo = "250101";
+      state.address = "서울특별시 강남구 테헤란로 123\n래미안아파트 101동 1203호";
+      state.admissionDate = "2026.03.02";
+      state.principal = "김OO 교장";
+      state.photo = defaultProfile;
+      state.remaining = 30;
+      inputPhoto.value = "";
+      renderCard();
+      fillInputs();
+      setQrMode(false);
+      updateTimerUi();
+    });
+
+    loadSavedData();
+    renderCard();
+    fillInputs();
+    setQrMode(false);
+    startTimer();
+  </script>
+</body>
+</html>
